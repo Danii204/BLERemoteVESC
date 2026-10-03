@@ -1,0 +1,13 @@
+*.iml
+.gradle/
+local.properties
+.idea/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Claves de firma: nunca al repositorio
+*.jks
+*.keystore
+keystore.properties
