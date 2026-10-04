@@ -999,7 +999,7 @@ class MainActivity : AppCompatActivity() {
         if (rumboSin.isNaN()) {
             compas.rumbo = Float.NaN
             tv(R.id.txtRumbo).text = "--"
-            tv(R.id.txtRumboSub).text = if (gpsActivado) "En marcha, +2 km/h" else "GPS desactivado"
+            tv(R.id.txtRumboSub).text = if (gpsActivado) "Sin datos" else "GPS desactivado"
             return
         }
         val grados = (Math.toDegrees(atan2(rumboSin, rumboCos).toDouble()).toFloat() + 360f) % 360f

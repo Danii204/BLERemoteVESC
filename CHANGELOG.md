@@ -2,6 +2,12 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [0.2.1] - 2026-10-04
+
+### Cambiado
+- **Beta 3** (`0.2.1-beta.3`).
+- La tarjeta de rumbo pone «Sin datos» mientras aún no hay rumbo, igual que el resto de tarjetas.
+
 ## [0.2.0] - 2026-10-04
 
 ### Añadido
