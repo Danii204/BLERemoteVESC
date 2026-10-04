@@ -35,6 +35,9 @@ import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.slider.Slider
 import com.google.android.material.materialswitch.MaterialSwitch
 import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sign
@@ -104,6 +107,8 @@ class MainActivity : AppCompatActivity() {
         private const val GPS_MIN_SAMPLES = 3
         private const val GPS_SPEED_FLOOR_KMH = 1.0f
         private const val GPS_STALE_MS = 5000L
+        /** Por debajo de esta velocidad el rumbo GPS no es fiable. */
+        private const val RUMBO_GPS_MIN_KMH = 2f
     }
 
     /**
@@ -570,11 +575,14 @@ class MainActivity : AppCompatActivity() {
             shape = GradientDrawable.OVAL
             setColor(p.error)
         }
-        listOf(R.id.cardBat, R.id.cardCmd, R.id.cardPow, R.id.cardSpd).forEach {
+        listOf(R.id.cardBat, R.id.cardRumbo, R.id.cardCmd, R.id.cardPow, R.id.cardSpd).forEach {
             findViewById<View>(it).background = redondo(p.s1, null, 20f)
         }
-        listOf(R.id.icBat, R.id.icCmd, R.id.icPow, R.id.icSpd).forEach { tintar(it, p.onVar) }
-        listOf(R.id.txtBat, R.id.txtPow, R.id.txtVelocidad).forEach { tv(it).setTextColor(p.onSurface) }
+        listOf(R.id.icBat, R.id.icRumbo, R.id.icCmd, R.id.icPow, R.id.icSpd).forEach { tintar(it, p.onVar) }
+        listOf(R.id.txtBat, R.id.txtRumbo, R.id.txtPow, R.id.txtVelocidad).forEach { tv(it).setTextColor(p.onSurface) }
+        tv(R.id.lblRumbo).setTextColor(p.onVar)
+        tv(R.id.txtRumboSub).setTextColor(p.onVar)
+        findViewById<CompassView>(R.id.compass).applyPalette(p)
         listOf(
             R.id.lblBat, R.id.lblCmd, R.id.lblPow, R.id.lblSpd, R.id.uBat, R.id.uCmd, R.id.uPow, R.id.uSpd,
             R.id.txtVolt, R.id.txtAutonomia, R.id.txtAmpBat, R.id.txtFixGps,
@@ -880,8 +888,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun limpiarVelocidad(motivo: String) {
         muestras.clear()
+        velocidadKmh = 0f
         tv(R.id.txtVelocidad).text = "--.-"
         tv(R.id.txtFixGps).text = motivo
+        pintarRumbo()
     }
 
     /** Solo se aceptan medidas con precision declarada suficiente. */
@@ -913,6 +923,9 @@ class MainActivity : AppCompatActivity() {
                 return
             }
             val media = muestras.average().toFloat()
+            velocidadKmh = media
+            if (location.hasBearing() && media >= RUMBO_GPS_MIN_KMH) nuevoRumboGps(location.bearing)
+            pintarRumbo()
             tv(R.id.txtVelocidad).text = "%.1f".format(if (media < GPS_SPEED_FLOOR_KMH) 0f else media)
             tv(R.id.txtFixGps).text = "GPS ±${precision.roundToInt()} m"
         }
@@ -950,6 +963,54 @@ class MainActivity : AppCompatActivity() {
             gpsEscuchando = false
         }
         limpiarVelocidad(motivo)
+    }
+
+    // --- Rumbo -------------------------------------------------------------
+
+    /*
+     * Rumbo sobre el fondo, del GPS. En un pato se va sentado mirando hacia
+     * atras, asi que la brujula del movil marcaria lo contrario: el GPS mide
+     * hacia donde se desplaza la embarcacion de verdad. Solo es fiable en
+     * marcha; parado se muestra el ultimo rumbo, atenuado.
+     */
+    private var velocidadKmh = 0f
+    /** Rumbo suavizado como vector unitario, para no saltar entre 359 y 0. */
+    private var rumboSin = Float.NaN
+    private var rumboCos = Float.NaN
+    private var rumboGpsMs = 0L
+
+    private fun nuevoRumboGps(grados: Float) {
+        val rad = Math.toRadians(grados.toDouble())
+        val sn = sin(rad).toFloat()
+        val cs = cos(rad).toFloat()
+        if (rumboSin.isNaN() || SystemClock.elapsedRealtime() - rumboGpsMs > 10_000) {
+            rumboSin = sn; rumboCos = cs
+        } else {
+            rumboSin += 0.4f * (sn - rumboSin)
+            rumboCos += 0.4f * (cs - rumboCos)
+        }
+        rumboGpsMs = SystemClock.elapsedRealtime()
+    }
+
+    private fun cardinal(g: Int) = arrayOf("N", "NE", "E", "SE", "S", "SO", "O", "NO")[((g + 22) % 360) / 45]
+
+    private fun pintarRumbo() {
+        val compas = findViewById<CompassView>(R.id.compass)
+        if (rumboSin.isNaN()) {
+            compas.rumbo = Float.NaN
+            tv(R.id.txtRumbo).text = "--"
+            tv(R.id.txtRumboSub).text = if (gpsActivado) "En marcha, +2 km/h" else "GPS desactivado"
+            return
+        }
+        val grados = (Math.toDegrees(atan2(rumboSin, rumboCos).toDouble()).toFloat() + 360f) % 360f
+        val g = grados.roundToInt() % 360
+        val enMarcha = velocidadKmh >= RUMBO_GPS_MIN_KMH &&
+            SystemClock.elapsedRealtime() - rumboGpsMs < 3000
+        compas.rumbo = grados
+        compas.atenuado = !enMarcha
+        tv(R.id.txtRumbo).text = "$g°"
+        tv(R.id.txtRumbo).alpha = if (enMarcha) 1f else 0.5f
+        tv(R.id.txtRumboSub).text = if (enMarcha) cardinal(g) else "${cardinal(g)} · último"
     }
 
     // --- Atenuado de pantalla ---------------------------------------------

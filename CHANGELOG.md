@@ -2,6 +2,12 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [0.2.0] - 2026-10-04
+
+### Añadido
+- **Beta 2** (`0.2.0-beta.2`).
+- **Rumbo** en la pantalla principal, bajo la batería: grados, punto cardinal y rosa con el norte en rojo. Sale del GPS (rumbo sobre el fondo), no de la brújula del móvil: en un pato se va sentado de espaldas al sentido de la marcha y la brújula marcaría lo contrario. Funciona a partir de 2 km/h; parado muestra el último rumbo atenuado.
+
 ## [0.1.0] - 2026-10-04
 
 ### Añadido

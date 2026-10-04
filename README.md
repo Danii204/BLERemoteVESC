@@ -19,6 +19,7 @@ An Android app that turns your phone into the throttle of an electric motor driv
 - **Power modes** — Eco, Cruise and Sport, each with its own current limit and acceleration ramp.
 - **Live data from the VESC**: battery percentage and voltage, estimated remaining time at the current consumption, power drawn from the battery (W) and battery current.
 - **Speed from the phone's GPS**, filtered so it only shows a value when the fix is accurate enough.
+- **Heading from GPS** (course over ground) with a small compass rose. It does not use the phone's compass: on a float tube you sit facing backwards, so the compass would read the opposite. Works above 2 km/h; when stopped it shows the last heading, dimmed.
 - **Beep on connect**: the motor itself plays two short tones when the link is established.
 - **Light, dark and AMOLED themes** (Material 3). AMOLED uses pure black to save battery on OLED screens.
 - **Battery-friendly**: GPS only while the app is in the foreground, screen kept on only while connected, optional dimming after 30 s without touching, adaptive Bluetooth traffic.

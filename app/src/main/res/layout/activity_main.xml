@@ -65,6 +65,21 @@
                     <TextView android:id="@+id/txtVolt" style="@style/Sup" android:text="Sin datos" />
                     <TextView android:id="@+id/txtAutonomia" style="@style/Sup" android:text="" />
                 </LinearLayout>
+                <LinearLayout android:id="@+id/cardRumbo" style="@style/Card" android:layout_marginTop="12dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                        <ImageView android:id="@+id/icRumbo" android:layout_width="18dp" android:layout_height="18dp" android:layout_marginEnd="6dp" android:src="@drawable/ic_explore" android:importantForAccessibility="no" />
+                        <TextView android:id="@+id/lblRumbo" style="@style/CardLbl" android:text="Rumbo" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                        android:gravity="center_vertical" android:orientation="horizontal">
+                        <xyz.danilab.bleremotevesc.CompassView android:id="@+id/compass" android:layout_width="44dp" android:layout_height="44dp"
+                            android:layout_marginEnd="10dp" />
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                            <TextView android:id="@+id/txtRumbo" style="@style/Num" android:layout_marginTop="0dp" android:text="--" android:textSize="26sp" />
+                            <TextView android:id="@+id/txtRumboSub" style="@style/Sup" android:layout_marginTop="2dp" android:text="" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
             </LinearLayout>
 
             <xyz.danilab.bleremotevesc.ThrottleView

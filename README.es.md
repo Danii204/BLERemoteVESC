@@ -19,6 +19,7 @@ App Android que convierte el móvil en el acelerador de un motor eléctrico con 
 - **Modos de potencia** Eco, Crucero y Sport, cada uno con su tope de corriente y su suavizado.
 - **Datos en directo del VESC**: porcentaje y tensión de batería, autonomía estimada al consumo actual, potencia que sale de la batería (W) y corriente de batería.
 - **Velocidad por el GPS del móvil**, filtrada para mostrar cifra solo cuando la precisión es suficiente.
+- **Rumbo por GPS** (rumbo sobre el fondo) con una rosa pequeña. No usa la brújula del móvil: en un pato se va sentado de espaldas y la brújula marcaría lo contrario. Funciona a partir de 2 km/h; parado muestra el último rumbo atenuado.
 - **Pitido al conectar**: el propio motor da dos tonos cortos al establecer el enlace.
 - **Temas claro, oscuro y AMOLED** (Material 3). El AMOLED usa negro puro y ahorra batería en pantallas OLED.
 - **Bajo consumo**: GPS solo con la app delante, pantalla encendida solo mientras hay conexión, atenuado opcional tras 30 s sin tocar y tráfico Bluetooth adaptativo.
