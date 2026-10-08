@@ -23,8 +23,8 @@ android {
         minSdk = 26
         targetSdk = 34
         // Mantener alineado con el fichero VERSION y con la etiqueta vX.Y.Z-beta.
-        versionCode = 3
-        versionName = "0.2.1-beta.3"
+        versionCode = 4
+        versionName = "0.3.0-beta.4"
     }
 
     signingConfigs {

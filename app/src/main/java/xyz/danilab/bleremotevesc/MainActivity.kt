@@ -8,6 +8,13 @@ import android.content.pm.PackageManager
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.net.Uri
+import androidx.core.content.FileProvider
+import com.google.android.material.snackbar.Snackbar
+import java.io.BufferedWriter
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.location.Location
@@ -85,6 +92,23 @@ class MainActivity : AppCompatActivity() {
         /** Sin telemetria durante este tiempo, la bateria se da por desconocida. */
         private const val TELEMETRY_STALE_MS = 3000L
         private const val BATTERY_CELLS = 10
+        /**
+         * Pares de polos del motor (Flipsky 65121: 6 polos). El VESC da rpm
+         * electricas; las del eje son ERPM / pares de polos.
+         */
+        private const val MOTOR_POLE_PAIRS = 3
+        /** Avisos de temperatura del VESC; corta a partir de 80 °C. */
+        private const val TEMP_AVISO_C = 65f
+        private const val TEMP_ALTA_C = 75f
+
+        /**
+         * Antibloqueo: con al menos esta corriente pedida y el eje por debajo
+         * de estas rpm durante este tiempo, se da la helice por atascada.
+         * El tiempo deja margen al arranque en openloop (~0,3 s).
+         */
+        private const val BLOQUEO_MIN_A = 5f
+        private const val BLOQUEO_MAX_RPM = 150
+        private const val BLOQUEO_MS = 1500L
 
         /**
          * Dos tonos con las bobinas del motor. foc-beep solo suena con el
@@ -310,6 +334,11 @@ class MainActivity : AppCompatActivity() {
 
         prepararSecciones()
         prepararActualizaciones()
+        prepararRegistro()
+        findViewById<MaterialSwitch>(R.id.swAntiBloqueo).apply {
+            isChecked = prefs.getBoolean("antibloqueo", true)
+            setOnCheckedChangeListener { _, on -> prefs.edit().putBoolean("antibloqueo", on).apply() }
+        }
         tv(R.id.aWeb).setOnClickListener { abrirWeb("https://www.danilab.xyz") }
         tv(R.id.aRepo).setOnClickListener { abrirWeb("https://github.com/${Updater.REPO}") }
 
@@ -445,6 +474,7 @@ class MainActivity : AppCompatActivity() {
             Seccion(R.id.hBateria, R.id.iBateria, R.id.tBateria, R.id.uBateria, R.id.cBateria, R.id.bBateria),
             Seccion(R.id.hAhorro, R.id.iAhorro, R.id.tAhorro, R.id.uAhorro, R.id.cAhorro, R.id.bAhorro),
             Seccion(R.id.hSeguridad, R.id.iSeguridad, R.id.tSeguridad, R.id.uSeguridad, R.id.cSeguridad, R.id.bSeguridad),
+            Seccion(R.id.hReg, R.id.iReg, R.id.tReg, R.id.uReg, R.id.cReg, R.id.bReg),
             Seccion(R.id.hUpd, R.id.iUpd, R.id.tUpd, R.id.uUpd, R.id.cUpd, R.id.bUpd),
             Seccion(R.id.hAcerca, R.id.iAcerca, R.id.tAcerca, R.id.uAcerca, R.id.cAcerca, R.id.bAcerca),
         )
@@ -575,10 +605,12 @@ class MainActivity : AppCompatActivity() {
             shape = GradientDrawable.OVAL
             setColor(p.error)
         }
-        listOf(R.id.cardBat, R.id.cardRumbo, R.id.cardCmd, R.id.cardPow, R.id.cardSpd).forEach {
+        listOf(R.id.cardBat, R.id.cardRumbo, R.id.cardMotor, R.id.cardCmd, R.id.cardPow, R.id.cardSpd).forEach {
             findViewById<View>(it).background = redondo(p.s1, null, 20f)
         }
-        listOf(R.id.icBat, R.id.icRumbo, R.id.icCmd, R.id.icPow, R.id.icSpd).forEach { tintar(it, p.onVar) }
+        listOf(R.id.icBat, R.id.icRumbo, R.id.icMotor, R.id.icCmd, R.id.icPow, R.id.icSpd).forEach { tintar(it, p.onVar) }
+        tv(R.id.txtRpm).setTextColor(p.onSurface)
+        listOf(R.id.lblMotor, R.id.uRpm, R.id.txtMotorA).forEach { tv(it).setTextColor(p.onVar) }
         listOf(R.id.txtBat, R.id.txtRumbo, R.id.txtPow, R.id.txtVelocidad).forEach { tv(it).setTextColor(p.onSurface) }
         tv(R.id.lblRumbo).setTextColor(p.onVar)
         tv(R.id.txtRumboSub).setTextColor(p.onVar)
@@ -621,6 +653,9 @@ class MainActivity : AppCompatActivity() {
         ).forEach { tv(it).setTextColor(p.onVar) }
         listOf(R.id.aWeb, R.id.aRepo).forEach { tv(it).setTextColor(p.primary) }
         tv(R.id.btnBuscarUpd).apply { setTextColor(p.onSurface); background = pulsable(p.s3, 20f) }
+        listOf(R.id.rAntiHint, R.id.rRegHint, R.id.txtRegEstado).forEach { tv(it).setTextColor(p.onVar) }
+        tv(R.id.txtRec).setTextColor(p.spo)
+        pintarBotonRec()
         tv(R.id.btnInstalarUpd).apply { setTextColor(p.onPrimary); background = pulsable(p.primary, 20f, p.onPrimary) }
 
         pintarSegmentado(
@@ -643,7 +678,7 @@ class MainActivity : AppCompatActivity() {
         // Interruptores Material 3
         val on = intArrayOf(android.R.attr.state_checked)
         val off = intArrayOf()
-        listOf(R.id.swPitido, R.id.swCorte, R.id.swGps, R.id.swAtenuar, R.id.swAutoUpd).forEach {
+        listOf(R.id.swPitido, R.id.swCorte, R.id.swGps, R.id.swAtenuar, R.id.swAutoUpd, R.id.swAntiBloqueo).forEach {
             findViewById<MaterialSwitch>(it).apply {
                 setTextColor(p.onSurface)
                 thumbTintList = ColorStateList(arrayOf(on, off), intArrayOf(p.onPrimary, p.outline))
@@ -789,6 +824,9 @@ class MainActivity : AppCompatActivity() {
         tv(R.id.txtPow).text = potencia.roundToInt().toString()
         actualizarAutonomia()
         tv(R.id.txtAmpBat).text = "%.1f A batería".format(v.inputCurrent)
+        mostrarMotor(v)
+        comprobarBloqueo(v)
+        escribirRegistro(v)
     }
 
     private fun pintarBateria() {
@@ -829,7 +867,137 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Datos del motor para ajustar la helice: rpm del eje, corriente de motor,
+     * duty y temperatura de los MOSFET del VESC.
+     */
+    private fun mostrarMotor(v: VescValues) {
+        val rpmEje = abs(v.rpm) / MOTOR_POLE_PAIRS
+        tv(R.id.txtRpm).text = rpmEje.toString()
+        tv(R.id.txtMotorA).text = "%.1f A motor · duty %d %%".format(abs(v.motorCurrent), (abs(v.duty) * 100).roundToInt())
+        tv(R.id.txtTempVesc).apply {
+            text = "VESC %.0f °C".format(v.tempFet)
+            setTextColor(
+                when {
+                    v.tempFet >= TEMP_ALTA_C -> palette.spo
+                    v.tempFet >= TEMP_AVISO_C -> palette.cru
+                    else -> palette.onVar
+                }
+            )
+        }
+    }
+
+    // --- Antibloqueo -------------------------------------------------------
+
+    private var bloqueoDesdeMs = 0L
+
+    /**
+     * Si se pide par y el eje no gira, algo frena la helice. El VESC seguiria
+     * metiendo corriente a un motor parado y se calentarian los dos: se corta.
+     */
+    private fun comprobarBloqueo(v: VescValues) {
+        if (!prefs.getBoolean("antibloqueo", true)) return
+        val rpmEje = abs(v.rpm) / MOTOR_POLE_PAIRS
+        val ahora = SystemClock.elapsedRealtime()
+        if (abs(currentSent) >= BLOQUEO_MIN_A && rpmEje < BLOQUEO_MAX_RPM) {
+            if (bloqueoDesdeMs == 0L) bloqueoDesdeMs = ahora
+            if (ahora - bloqueoDesdeMs >= BLOQUEO_MS) {
+                bloqueoDesdeMs = 0L
+                pararMotor()
+                throttle.performHapticFeedback(android.view.HapticFeedbackConstants.REJECT)
+                Snackbar.make(findViewById(R.id.root), "Hélice bloqueada: motor parado. Revisa algas o cabos.", Snackbar.LENGTH_LONG).show()
+            }
+        } else {
+            bloqueoDesdeMs = 0L
+        }
+    }
+
+    // --- Registro CSV -----------------------------------------------------
+
+    private var registro: BufferedWriter? = null
+    private var registroFichero: File? = null
+    private var registroInicioMs = 0L
+    private var registroFilas = 0
+
+    private fun prepararRegistro() {
+        tv(R.id.btnRec).setOnClickListener { if (registro == null) empezarRegistro() else pararRegistro() }
+    }
+
+    private fun pintarBotonRec() {
+        val grabando = registro != null
+        val p = palette
+        tv(R.id.btnRec).apply {
+            text = if (grabando) "Parar y compartir" else "Empezar a grabar"
+            if (grabando) {
+                setTextColor(p.onStop); background = pulsable(p.stopBg, 20f, p.onStop)
+            } else {
+                setTextColor(p.onSurface); background = pulsable(p.s3, 20f)
+            }
+        }
+        tv(R.id.txtRec).visibility = if (grabando) View.VISIBLE else View.GONE
+    }
+
+    private fun empezarRegistro() {
+        val dir = File(cacheDir, "logs").apply { mkdirs() }
+        val nombre = "registro_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) + ".csv"
+        val f = File(dir, nombre)
+        registro = f.bufferedWriter().apply {
+            write("t_s,modo,palanca_pct,consigna_A,motor_A,bateria_A,tension_V,potencia_W,duty,rpm_eje,temp_vesc_C,velocidad_kmh,rumbo_deg,gps_precision_m\n")
+        }
+        registroFichero = f
+        registroInicioMs = SystemClock.elapsedRealtime()
+        registroFilas = 0
+        tv(R.id.txtRegEstado).text = "Grabando $nombre"
+        pintarBotonRec()
+    }
+
+    private var ultimaPrecisionGps = Float.NaN
+
+    private fun escribirRegistro(v: VescValues) {
+        val w = registro ?: return
+        val t = (SystemClock.elapsedRealtime() - registroInicioMs) / 1000f
+        val rumbo = if (rumboSin.isNaN()) "" else
+            "%.0f".format(Locale.US, (Math.toDegrees(atan2(rumboSin, rumboCos).toDouble()) + 360) % 360)
+        val vel = if (muestras.isEmpty()) "" else "%.2f".format(Locale.US, velocidadKmh)
+        val prec = if (ultimaPrecisionGps.isNaN()) "" else "%.0f".format(Locale.US, ultimaPrecisionGps)
+        w.write(
+            String.format(
+                Locale.US, "%.2f,%s,%.0f,%.2f,%.2f,%.2f,%.2f,%.1f,%.3f,%d,%.1f,%s,%s,%s\n",
+                t, modoPot.id, palancaPct, currentSent, v.motorCurrent, v.inputCurrent, v.vIn + vOffset,
+                (v.vIn + vOffset) * v.inputCurrent, v.duty, v.rpm / MOTOR_POLE_PAIRS, v.tempFet, vel, rumbo, prec,
+            )
+        )
+        registroFilas++
+        if (registroFilas % 25 == 0) {
+            w.flush()
+            tv(R.id.txtRegEstado).text = "Grabando · ${registroFilas} filas · %.0f s".format(t)
+        }
+    }
+
+    private fun pararRegistro() {
+        val w = registro ?: return
+        w.flush(); w.close()
+        registro = null
+        pintarBotonRec()
+        val f = registroFichero ?: return
+        tv(R.id.txtRegEstado).text = "Guardado ${f.name} · $registroFilas filas"
+        val uri = FileProvider.getUriForFile(this, "$packageName.updates", f)
+        val enviar = Intent(Intent.ACTION_SEND)
+            .setType("text/csv")
+            .putExtra(Intent.EXTRA_STREAM, uri)
+            .putExtra(Intent.EXTRA_SUBJECT, f.name)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            startActivity(Intent.createChooser(enviar, "Compartir registro"))
+        } catch (_: Exception) {
+            // Sin apps para compartir: queda guardado en la cache de la app.
+        }
+    }
+
     private fun limpiarBateria(motivo: String) {
+        tv(R.id.txtRpm).text = "--"
+        tv(R.id.txtMotorA).text = "Sin datos"
+        tv(R.id.txtTempVesc).text = ""
         ultimoVIn = 0f
         potencia = 0f
         potenciaMedia = 0f
@@ -914,6 +1082,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             ultimoFixMs = SystemClock.elapsedRealtime()
+            ultimaPrecisionGps = precision
             muestras.addLast(location.speed * 3.6f)
             while (muestras.size > GPS_WINDOW) muestras.removeFirst()
 
@@ -1065,6 +1234,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         handler.removeCallbacks(txRunnable)
         pararGps("")
+        registro?.let { it.flush(); it.close() }
         ble.disconnect()
     }
 }

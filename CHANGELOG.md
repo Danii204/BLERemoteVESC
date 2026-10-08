@@ -2,6 +2,17 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según [SemVer](https://semver.org/lang/es/).
 
+## [0.3.0] - 2026-10-08
+
+### Añadido
+- **Beta 4** (`0.3.0-beta.4`).
+- Tarjeta **Motor**: rpm del eje, corriente de motor, duty y temperatura del VESC (naranja desde 65 °C, rojo desde 75 °C).
+- **Registro de prueba** en CSV a 5 Hz (palanca, consigna, corrientes, tensión, potencia, duty, rpm, temperatura, velocidad y rumbo). Al parar se comparte el fichero.
+- **Antibloqueo de hélice**: si se pide par y el eje no gira durante 1,5 s, corta el motor y avisa. Se desactiva en Seguridad.
+
+### Corregido
+- El rumbo ya no parte el símbolo de grados en otra línea.
+
 ## [0.2.1] - 2026-10-04
 
 ### Cambiado

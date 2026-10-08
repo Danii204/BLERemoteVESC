@@ -26,6 +26,9 @@
             <TextView android:id="@+id/txtTitulo" android:layout_width="0dp" android:layout_height="wrap_content"
                 android:layout_marginStart="4dp" android:layout_weight="1" android:ellipsize="end" android:maxLines="1"
                 android:text="BLERemoteVESC" android:textSize="22sp" />
+            <TextView android:id="@+id/txtRec" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp" android:fontFamily="sans-serif-medium" android:text="● REC"
+                android:textSize="13sp" android:visibility="gone" />
             <LinearLayout android:id="@+id/chipLink" android:layout_width="wrap_content" android:layout_height="32dp"
                 android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="12dp">
                 <ImageView android:id="@+id/icLink" android:layout_width="18dp" android:layout_height="18dp"
@@ -75,10 +78,22 @@
                         <xyz.danilab.bleremotevesc.CompassView android:id="@+id/compass" android:layout_width="44dp" android:layout_height="44dp"
                             android:layout_marginEnd="10dp" />
                         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                            <TextView android:id="@+id/txtRumbo" style="@style/Num" android:layout_marginTop="0dp" android:text="--" android:textSize="26sp" />
+                            <TextView android:id="@+id/txtRumbo" style="@style/Num" android:layout_width="match_parent" android:layout_marginTop="0dp" android:maxLines="1" android:text="--" android:textSize="26sp" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="16sp" android:autoSizeMaxTextSize="26sp" />
                             <TextView android:id="@+id/txtRumboSub" style="@style/Sup" android:layout_marginTop="2dp" android:text="" />
                         </LinearLayout>
                     </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/cardMotor" style="@style/Card" android:layout_marginTop="12dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                        <ImageView android:id="@+id/icMotor" android:layout_width="18dp" android:layout_height="18dp" android:layout_marginEnd="6dp" android:src="@drawable/ic_settings" android:importantForAccessibility="no" />
+                        <TextView android:id="@+id/lblMotor" style="@style/CardLbl" android:text="Motor" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                        <TextView android:id="@+id/txtRpm" style="@style/Num" android:maxLines="1" android:text="--" android:textSize="26sp" />
+                        <TextView android:id="@+id/uRpm" style="@style/Unit" android:text="rpm" />
+                    </LinearLayout>
+                    <TextView android:id="@+id/txtMotorA" style="@style/Sup" android:text="Sin datos" />
+                    <TextView android:id="@+id/txtTempVesc" style="@style/Sup" android:text="" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -268,12 +283,30 @@
             <LinearLayout android:id="@+id/bSeguridad" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:paddingStart="56dp" android:paddingEnd="16dp" android:paddingBottom="12dp" android:visibility="gone">
                 <TextView android:id="@+id/rSeg1" style="@style/Hint" android:text="Corte al perder enlace: 1,0 s (lo hace el VESC)." />
+                <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/swAntiBloqueo"
+                    android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
+                    android:text="Antibloqueo de hélice" android:textSize="14sp" />
+                <TextView android:id="@+id/rAntiHint" style="@style/Hint" android:text="Si la hélice se atasca (algas, cabos) y el motor queda parado tirando corriente, se corta solo." />
                 <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/swCorte"
                     android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
                     android:text="Parar el motor al salir de la app" android:textSize="14sp" />
                 <TextView android:id="@+id/rCorteHint" style="@style/Hint" android:text="" />
             </LinearLayout>
 
+            <LinearLayout android:id="@+id/hReg" style="@style/Item">
+                <ImageView android:id="@+id/iReg" style="@style/ItemIcon" android:src="@drawable/ic_monitoring" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:id="@+id/tReg" style="@style/ItemTitle" android:text="Registro de prueba" />
+                    <TextView android:id="@+id/uReg" style="@style/ItemSub" android:text="Grabar datos en CSV" />
+                </LinearLayout>
+                <ImageView android:id="@+id/cReg" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_expand" android:importantForAccessibility="no" />
+            </LinearLayout>
+            <LinearLayout android:id="@+id/bReg" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:paddingStart="56dp" android:paddingEnd="16dp" android:paddingBottom="12dp" android:visibility="gone">
+                <TextView android:id="@+id/rRegHint" style="@style/Hint" android:text="Graba 5 veces por segundo: palanca, corriente, duty, rpm, potencia, temperatura, velocidad y rumbo. Al parar se ofrece compartir el fichero." />
+                <TextView android:id="@+id/btnRec" style="@style/Btn" android:text="Empezar a grabar" />
+                <TextView android:id="@+id/txtRegEstado" style="@style/Hint" android:text="" />
+            </LinearLayout>
             <LinearLayout android:id="@+id/hUpd" style="@style/Item">
                 <ImageView android:id="@+id/iUpd" style="@style/ItemIcon" android:src="@drawable/ic_update" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">

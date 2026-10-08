@@ -20,6 +20,9 @@ App Android que convierte el móvil en el acelerador de un motor eléctrico con 
 - **Datos en directo del VESC**: porcentaje y tensión de batería, autonomía estimada al consumo actual, potencia que sale de la batería (W) y corriente de batería.
 - **Velocidad por el GPS del móvil**, filtrada para mostrar cifra solo cuando la precisión es suficiente.
 - **Rumbo por GPS** (rumbo sobre el fondo) con una rosa pequeña. No usa la brújula del móvil: en un pato se va sentado de espaldas y la brújula marcaría lo contrario. Funciona a partir de 2 km/h; parado muestra el último rumbo atenuado.
+- **Datos del motor**: rpm del eje, corriente de motor, duty y temperatura del controlador.
+- **Registro de prueba**: graba una salida en CSV a 5 Hz y compártela, para ajustar la hélice con datos reales.
+- **Antibloqueo de hélice**: si se pide par y el eje no gira durante 1,5 s (algas, cabos), el motor se para.
 - **Pitido al conectar**: el propio motor da dos tonos cortos al establecer el enlace.
 - **Temas claro, oscuro y AMOLED** (Material 3). El AMOLED usa negro puro y ahorra batería en pantallas OLED.
 - **Bajo consumo**: GPS solo con la app delante, pantalla encendida solo mientras hay conexión, atenuado opcional tras 30 s sin tocar y tráfico Bluetooth adaptativo.
